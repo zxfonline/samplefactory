@@ -8,17 +8,18 @@ import (
 
 	"os"
 	"sort"
+	"strings"
 
+	"bytes"
 	"encoding/csv"
+	"encoding/gob"
 
-	"path/filepath"
-
+	"github.com/tealeg/xlsx"
 	"github.com/zxfonline/csvconfig"
 	"github.com/zxfonline/fileutil"
 	"github.com/zxfonline/go-ulua"
 	"github.com/zxfonline/golog"
 	"github.com/zxfonline/json"
-	"github.com/zxfonline/xlsx"
 )
 
 var (
@@ -39,12 +40,35 @@ type SampleFactory struct {
 
 //获取模板数据
 func (f *SampleFactory) GetSample(sid int) Sample {
+	return f.samples[sid]
+}
+
+//克隆模板数据
+func (f *SampleFactory) NewSample(sid int) Sample {
 	return f.samples[sid].Clone()
 }
 
-//获取模板克隆数据
-func (f *SampleFactory) NewSample(sid int) Sample {
-	return f.samples[sid].Clone()
+func DeepGobCopy(dst, src interface{}) {
+	var buf bytes.Buffer
+	err := gob.NewEncoder(&buf).Encode(src)
+	if err != nil {
+		panic(err)
+	}
+	err = gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func DeepJsonCopy(dst, src interface{}) {
+	bb, err := json.Marshal(src)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(bb, dst)
+	if err != nil {
+		panic(err)
+	}
 }
 
 //解析csv文件生成模板对象工厂
@@ -71,7 +95,7 @@ func CreateSampleFacotry(tableName string, nf func() Sample) (*SampleFactory, er
 
 //数据本地化 saveType：1=excel、2=csv、4=lua
 func (f *SampleFactory) Store(savePath string, saveType int, nf func() Sample) error {
-	savePath = filepath.ToSlash(savePath)
+	savePath = strings.Replace(savePath, "\\", "/", -1)
 	if saveType&1 != 0 || saveType&2 != 0 {
 		objptr := nf()
 		toj, err := json.Marshal(&objptr)
@@ -133,7 +157,8 @@ func (f *SampleFactory) Store(savePath string, saveType int, nf func() Sample) e
 				return err
 			}
 		}
-	} else if saveType&4 != 0 {
+	}
+	if saveType&4 != 0 {
 		err := f.saveLua(savePath)
 		if err != nil {
 			return err
@@ -157,7 +182,7 @@ func (f *SampleFactory) saveExcel(table [][]string, savePath string) (err error)
 	}
 	savePath = fileutil.PathJoin(savePath, f.tableName+".xlsx")
 	if fileutil.FileExists(savePath) {
-		logger.Warnf("store excel file exists.rewrite path=%v", savePath)
+		logger.Infof("store excel file exists.rewrite path=%v", savePath)
 	}
 	var file *os.File
 	file, err = fileutil.OpenFile(savePath, fileutil.DefaultFileMode, os.O_TRUNC|os.O_CREATE|os.O_WRONLY)
@@ -173,7 +198,7 @@ func (f *SampleFactory) saveExcel(table [][]string, savePath string) (err error)
 func (f *SampleFactory) saveCsv(table [][]string, savePath string) (err error) {
 	savePath = fileutil.PathJoin(savePath, f.tableName+".csv")
 	if fileutil.FileExists(savePath) {
-		logger.Warnf("store csv file exists.rewrite path=%v", savePath)
+		logger.Infof("store csv file exists.rewrite path=%v", savePath)
 	}
 	var file *os.File
 	file, err = fileutil.OpenFile(savePath, fileutil.DefaultFileMode, os.O_TRUNC|os.O_CREATE|os.O_WRONLY)
@@ -190,11 +215,10 @@ func (f *SampleFactory) saveCsv(table [][]string, savePath string) (err error) {
 	w.Flush()
 	return w.Error()
 }
-
 func (f *SampleFactory) saveLua(savePath string) (err error) {
 	savePath = fileutil.PathJoin(savePath, f.tableName+".lua")
 	if fileutil.FileExists(savePath) {
-		logger.Warnf("store lua file exists.rewrite path=%v", savePath)
+		logger.Infof("store lua file exists.rewrite path=%v", savePath)
 	}
 	var bb []byte
 	bb, err = ulua.MarshalIndent(f.samples, "\t")
