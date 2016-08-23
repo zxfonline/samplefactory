@@ -185,7 +185,7 @@ func (f *SampleFactory) saveExcel(table [][]string, savePath string) (err error)
 		logger.Infof("store excel file exists.rewrite path=%v", savePath)
 	}
 	var file *os.File
-	file, err = fileutil.OpenFile(savePath, fileutil.DefaultFileMode, os.O_TRUNC|os.O_CREATE|os.O_WRONLY)
+	file, err = fileutil.OpenFile(savePath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, fileutil.DefaultFileMode)
 	if err != nil {
 		return
 	}
@@ -201,7 +201,7 @@ func (f *SampleFactory) saveCsv(table [][]string, savePath string) (err error) {
 		logger.Infof("store csv file exists.rewrite path=%v", savePath)
 	}
 	var file *os.File
-	file, err = fileutil.OpenFile(savePath, fileutil.DefaultFileMode, os.O_TRUNC|os.O_CREATE|os.O_WRONLY)
+	file, err = fileutil.OpenFile(savePath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, fileutil.DefaultFileMode)
 	if err != nil {
 		return
 	}
@@ -226,7 +226,7 @@ func (f *SampleFactory) saveLua(savePath string) (err error) {
 		return
 	}
 	var file *os.File
-	file, err = fileutil.OpenFile(savePath, fileutil.DefaultFileMode, os.O_TRUNC|os.O_CREATE|os.O_WRONLY)
+	file, err = fileutil.OpenFile(savePath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, fileutil.DefaultFileMode)
 	if err != nil {
 		return
 	}
