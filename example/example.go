@@ -7,6 +7,7 @@ import (
 
 	"github.com/zxfonline/csvconfig"
 	"github.com/zxfonline/samplefactory"
+	"github.com/zxfonline/strutil"
 )
 
 type OBJ struct {
@@ -14,6 +15,7 @@ type OBJ struct {
 	Attr2 string
 	Att3  map[string]string
 	Att4  []*OBJ1
+	Att5  map[int]string
 }
 type OBJ1 struct {
 	AP1 string
@@ -29,11 +31,14 @@ func NewObj() *OBJ {
 		Attr1: 1,
 		Attr2: "2",
 		Att3:  make(map[string]string),
+		Att5:  make(map[int]string),
 		Att4:  make([]*OBJ1, 0, 4),
 	}
 	n.Att3["a31"] = "311"
 	n.Att3["a32"] = "321"
 	n.Att3["a33"] = "331"
+	n.Att5[1] = "331"
+	n.Att5[2] = "331"
 	n.Att4 = append(n.Att4, &OBJ1{"41", 41})
 	n.Att4 = append(n.Att4, &OBJ1{"42", 42})
 	n.Att4 = append(n.Att4, &OBJ1{"43", 43})
@@ -58,8 +63,8 @@ func (kvm ItemKv) MarshalText() ([]byte, error) {
 func (kvm ItemKv) UnmarshalText(text []byte) error {
 	ps := strings.Split(string(text), ",")
 	for i := 0; i < len(ps); i += 2 {
-		k := csvconfig.Sto16(ps[i])
-		v := csvconfig.Sto32(ps[i+1])
+		k := strutil.Stoi16(ps[i])
+		v := strutil.Stoi32(ps[i+1])
 		gi := &GDPreItem{ItemId: k, ItemCnt: v}
 		kvm[k] = gi
 	}
@@ -106,7 +111,7 @@ type KVAttr struct {
 	Sid   int `json:",string"`
 	Value int `json:",string"`
 	DESC  string
-	Obj   *OBJ `json:"-" lua:"-"` // lua:"-"
+	Obj   *OBJ `json:"-"` //`json:"-" lua:"-"`
 }
 
 func (s *KVAttr) GetSid() int {
