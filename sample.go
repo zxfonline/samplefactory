@@ -23,9 +23,7 @@ import (
 	"github.com/zxfonline/json"
 )
 
-var (
-	logger = golog.New("Sample")
-)
+var logger *golog.Logger = golog.New("Sample")
 
 //模板接口
 type Sample interface {
